@@ -1,0 +1,12 @@
+<svg width="1552" height="686" viewBox="0 0 1552 686" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+    <linearGradient id="paint0_linear_1_2" x1="776" y1="20" x2="776" y2="666" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FF3A3A"/>
+        <stop offset="1" stop-color="#E50914"/>
+    </linearGradient>
+</defs>
+<path d="M112 49H1440C1470.33 49 1495 73.667 1495 104V582C1495 612.333 1470.33 637 1440 637H112C81.6674 637 57 612.333 57 582V104C57 73.667 81.6674 49 112 49Z" fill="url(#paint0_linear_1_2)"/>
+<path d="M80 67L776 20L1472 67V619L776 666L80 619V67Z" stroke="white" stroke-width="18"/>
+<path d="M112 92L776 48L1440 92V604L776 648L112 604V92Z" stroke="white" stroke-width="12" opacity="0.95"/>
+<text x="776" y="462" text-anchor="middle" fill="white" font-size="220" font-weight="800" font-family="Prompt, 'Noto Sans Thai', sans-serif" letter-spacing="-6">นีสำพงษ์</text>
+</svg>
