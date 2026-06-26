@@ -40,6 +40,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                             Portals
                                         </NavLink>
                                         <NavLink
+                                            href={route('admin.groups.index')}
+                                            active={route().current('admin.groups.*')}
+                                        >
+                                            Groups
+                                        </NavLink>
+                                        <NavLink
                                             href={route('admin.users.index')}
                                             active={route().current('admin.users.*')}
                                         >
@@ -158,6 +164,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                     active={route().current('admin.portals.*') || route().current('admin.dashboard')}
                                 >
                                     Portals
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('admin.groups.index')}
+                                    active={route().current('admin.groups.*')}
+                                >
+                                    Groups
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
                                     href={route('admin.users.index')}

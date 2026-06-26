@@ -7,8 +7,9 @@ import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import { Head, useForm } from '@inertiajs/react';
 
-export default function Create() {
+export default function Create({ groups }) {
     const { data, setData, post, processing, errors } = useForm({
+        group_id: '',
         name: '',
         description: '',
         url: '',
@@ -19,6 +20,7 @@ export default function Create() {
     const submit = (e) => {
         e.preventDefault();
         const formData = new FormData();
+        formData.append('group_id', data.group_id);
         formData.append('name', data.name);
         formData.append('description', data.description);
         formData.append('url', data.url);
@@ -44,6 +46,25 @@ export default function Create() {
                 <div className="mx-auto max-w-2xl sm:px-6 lg:px-8">
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <form onSubmit={submit} className="space-y-6 p-6">
+                            <div>
+                                <InputLabel htmlFor="group_id" value="Group" />
+                                <select
+                                    id="group_id"
+                                    name="group_id"
+                                    value={data.group_id}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                    onChange={(e) => setData('group_id', e.target.value)}
+                                >
+                                    <option value="">Select a group</option>
+                                    {groups.map((group) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <InputError message={errors.group_id} className="mt-2" />
+                            </div>
+
                             <div>
                                 <InputLabel htmlFor="name" value="Name" />
                                 <TextInput

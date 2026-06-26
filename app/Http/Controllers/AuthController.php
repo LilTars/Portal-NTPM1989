@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Portal;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,8 +13,15 @@ class AuthController extends Controller
 {
     public function showLoginForm()
     {
+        $groups = Group::query()
+            ->active()
+            ->whereHas('portals', fn ($query) => $query->active())
+            ->with(['portals' => fn ($query) => $query->active()->latest()])
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Welcome', [
-            'portals' => Portal::active()->latest()->get(),
+            'groups' => $groups,
             'showLoginModal' => true,
         ]);
     }

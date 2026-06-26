@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\PortalController as AdminPortalController;
+use App\Http\Controllers\Admin\GroupController as AdminGroupController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PortalController;
@@ -43,6 +44,10 @@ Route::middleware(['auth', 'admin'])
         Route::resource('portals', AdminPortalController::class)->except(['show']);
         Route::put('portals/{portal}/status', [AdminPortalController::class, 'toggleStatus'])
             ->name('portals.status');
+
+        Route::resource('groups', AdminGroupController::class)->except(['show']);
+        Route::put('groups/{group}/status', [AdminGroupController::class, 'toggleStatus'])
+            ->name('groups.status');
 
         Route::resource('users', AdminUserController::class)->except(['show']);
         Route::put('users/{user}/status', [AdminUserController::class, 'toggleStatus'])

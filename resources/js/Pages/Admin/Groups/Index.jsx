@@ -4,23 +4,21 @@ import { Head, Link, router } from '@inertiajs/react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { usePage } from '@inertiajs/react';
 
-export default function Index({ portals, filters, groups }) {
+export default function Index({ groups, filters }) {
     const { props } = usePage();
     const flash = props.flash || {};
     const [search, setSearch] = React.useState(filters?.search ?? '');
-    const [groupId, setGroupId] = React.useState(filters?.group_id ?? '');
-    const isFirstFilterRun = React.useRef(true);
+    const isFirstSearchRun = React.useRef(true);
 
     React.useEffect(() => {
-        if (isFirstFilterRun.current) {
-            isFirstFilterRun.current = false;
+        if (isFirstSearchRun.current) {
+            isFirstSearchRun.current = false;
             return;
         }
 
         const timeoutId = setTimeout(() => {
-            router.get(route('admin.portals.index'), {
+            router.get(route('admin.groups.index'), {
                 search,
-                group_id: groupId,
             }, {
                 preserveState: true,
                 preserveScroll: true,
@@ -29,12 +27,11 @@ export default function Index({ portals, filters, groups }) {
         }, 250);
 
         return () => clearTimeout(timeoutId);
-    }, [search, groupId]);
+    }, [search]);
 
     const clearSearch = () => {
         setSearch('');
-        setGroupId('');
-        router.get(route('admin.portals.index'), {}, {
+        router.get(route('admin.groups.index'), {}, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -42,14 +39,14 @@ export default function Index({ portals, filters, groups }) {
     };
 
     const handleDelete = (id) => {
-        if (confirm('Are you sure you want to delete this portal?')) {
-            router.delete(route('admin.portals.destroy', id));
+        if (confirm('Are you sure you want to delete this group?')) {
+            router.delete(route('admin.groups.destroy', id));
         }
     };
 
-    const handleToggleStatus = (portal) => {
-        router.put(route('admin.portals.status', portal.id), {
-            is_active: !portal.is_active,
+    const handleToggleStatus = (group) => {
+        router.put(route('admin.groups.status', group.id), {
+            is_active: !group.is_active,
         });
     };
 
@@ -57,11 +54,11 @@ export default function Index({ portals, filters, groups }) {
         <AuthenticatedLayout
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Portals Management
+                    Groups Management
                 </h2>
             }
         >
-            <Head title="Portals" />
+            <Head title="Groups" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -77,31 +74,19 @@ export default function Index({ portals, filters, groups }) {
                     )}
 
                     <div className="mb-4">
-                        <Link href={route('admin.portals.create')}>
-                            <PrimaryButton>Add New Portal</PrimaryButton>
+                        <Link href={route('admin.groups.create')}>
+                            <PrimaryButton>Add New Group</PrimaryButton>
                         </Link>
                     </div>
 
-                    <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+                    <div className="mb-4 flex items-center gap-2">
                         <input
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search name or URL"
-                            className="w-72 rounded-md border-gray-300 text-sm shadow-sm"
+                            placeholder="Search group name"
+                            className="w-80 rounded-md border-gray-300 text-sm shadow-sm"
                         />
-                        <select
-                            value={groupId}
-                            onChange={(e) => setGroupId(e.target.value)}
-                            className="rounded-md border-gray-300 text-sm shadow-sm"
-                        >
-                            <option value="">All groups</option>
-                            {groups.map((group) => (
-                                <option key={group.id} value={String(group.id)}>
-                                    {group.name}
-                                </option>
-                            ))}
-                        </select>
                         <button
                             type="button"
                             onClick={clearSearch}
@@ -109,58 +94,39 @@ export default function Index({ portals, filters, groups }) {
                         >
                             Clear
                         </button>
-                        <span className="ml-auto text-xs text-gray-500">
-                            {portals.total} results
-                        </span>
                     </div>
 
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Image</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Group</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">URL</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {portals.data.map((portal) => (
-                                    <tr key={portal.id}>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            {portal.image_path ? (
-                                                <img
-                                                    src={`/storage/${portal.image_path}`}
-                                                    alt={portal.name}
-                                                    className="h-12 w-12 rounded-md border border-gray-200 object-contain bg-gray-50 p-1"
-                                                />
-                                            ) : (
-                                                <span className="text-xs text-gray-400">No image</span>
-                                            )}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{portal.group?.name ?? '-'}</td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{portal.name}</td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{portal.url}</td>
+                                {groups.data.map((group) => (
+                                    <tr key={group.id}>
+                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{group.name}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm">
                                             <button
-                                                onClick={() => handleToggleStatus(portal)}
+                                                onClick={() => handleToggleStatus(group)}
                                                 className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                    portal.is_active
+                                                    group.is_active
                                                         ? 'bg-green-100 text-green-800'
                                                         : 'bg-red-100 text-red-800'
                                                 }`}
                                             >
-                                                {portal.is_active ? 'Active' : 'Inactive'}
+                                                {group.is_active ? 'Active' : 'Inactive'}
                                             </button>
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                            <Link href={route('admin.portals.edit', portal.id)} className="text-indigo-600 hover:text-indigo-900">
+                                            <Link href={route('admin.groups.edit', group.id)} className="text-indigo-600 hover:text-indigo-900">
                                                 Edit
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(portal.id)}
+                                                onClick={() => handleDelete(group.id)}
                                                 className="ml-4 text-red-600 hover:text-red-900"
                                             >
                                                 Delete
@@ -168,10 +134,10 @@ export default function Index({ portals, filters, groups }) {
                                         </td>
                                     </tr>
                                 ))}
-                                {portals.data.length === 0 && (
+                                {groups.data.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-6 text-center text-sm text-gray-500">
-                                            No portals found.
+                                        <td colSpan="3" className="px-6 py-6 text-center text-sm text-gray-500">
+                                            No groups found.
                                         </td>
                                     </tr>
                                 )}
@@ -179,7 +145,7 @@ export default function Index({ portals, filters, groups }) {
                         </table>
 
                         <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 px-6 py-4">
-                            {portals.links.map((link, index) => (
+                            {groups.links.map((link, index) => (
                                 link.url ? (
                                     <Link
                                         key={index}

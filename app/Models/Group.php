@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['group_id', 'name', 'description', 'image_path', 'url', 'is_active'])]
-class Portal extends Model
+#[Fillable(['name', 'is_active'])]
+class Group extends Model
 {
     use HasFactory;
 
@@ -21,8 +21,8 @@ class Portal extends Model
         return $query->where('is_active', true);
     }
 
-    public function group(): BelongsTo
+    public function portals(): HasMany
     {
-        return $this->belongsTo(Group::class);
+        return $this->hasMany(Portal::class);
     }
 }

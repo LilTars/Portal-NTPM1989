@@ -9,17 +9,26 @@ export default function Index({ users, filters }) {
     const authUser = props.auth?.user;
     const flash = props.flash || {};
     const [search, setSearch] = React.useState(filters?.search ?? '');
+    const isFirstSearchRun = React.useRef(true);
 
-    const submitSearch = (e) => {
-        e.preventDefault();
-        router.get(route('admin.users.index'), {
-            search,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    };
+    React.useEffect(() => {
+        if (isFirstSearchRun.current) {
+            isFirstSearchRun.current = false;
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            router.get(route('admin.users.index'), {
+                search,
+            }, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }, 250);
+
+        return () => clearTimeout(timeoutId);
+    }, [search]);
 
     const clearSearch = () => {
         setSearch('');
@@ -76,7 +85,7 @@ export default function Index({ users, filters }) {
                         </Link>
                     </div>
 
-                    <form onSubmit={submitSearch} className="mb-4 flex items-center gap-2">
+                    <div className="mb-4 flex items-center gap-2">
                         <input
                             type="text"
                             value={search}
@@ -84,7 +93,6 @@ export default function Index({ users, filters }) {
                             placeholder="Search name, username, email"
                             className="w-80 rounded-md border-gray-300 text-sm shadow-sm"
                         />
-                        <PrimaryButton type="submit">Search</PrimaryButton>
                         <button
                             type="button"
                             onClick={clearSearch}
@@ -92,7 +100,7 @@ export default function Index({ users, filters }) {
                         >
                             Clear
                         </button>
-                    </form>
+                    </div>
 
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <table className="w-full">
