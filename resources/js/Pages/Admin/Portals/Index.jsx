@@ -1,15 +1,33 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { usePage } from '@inertiajs/react';
+import SecondaryButton from '@/Components/SecondaryButton';
+import Modal from '@/Components/Modal';
+import InputLabel from '@/Components/InputLabel';
+import TextInput from '@/Components/TextInput';
+import InputError from '@/Components/InputError';
+import Checkbox from '@/Components/Checkbox';
 
 export default function Index({ portals, filters, groups }) {
     const { props } = usePage();
     const flash = props.flash || {};
     const [search, setSearch] = React.useState(filters?.search ?? '');
     const [groupId, setGroupId] = React.useState(filters?.group_id ?? '');
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [editingPortal, setEditingPortal] = React.useState(null);
     const isFirstFilterRun = React.useRef(true);
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+        group_id: '',
+        name: '',
+        description: '',
+        url: '',
+        image: null,
+        is_active: true,
+        _method: 'POST',
+    });
+    const [previewUrl, setPreviewUrl] = React.useState(null);
 
     React.useEffect(() => {
         if (isFirstFilterRun.current) {
@@ -31,6 +49,72 @@ export default function Index({ portals, filters, groups }) {
         return () => clearTimeout(timeoutId);
     }, [search, groupId]);
 
+    React.useEffect(() => {
+        if (!data.image) {
+            setPreviewUrl(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(data.image);
+        setPreviewUrl(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [data.image]);
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setEditingPortal(null);
+        reset();
+        clearErrors();
+    };
+
+    const openCreateModal = () => {
+        setEditingPortal(null);
+        setData({
+            group_id: '',
+            name: '',
+            description: '',
+            url: '',
+            image: null,
+            is_active: true,
+            _method: 'POST',
+        });
+        clearErrors();
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (portal) => {
+        setEditingPortal(portal);
+        setData({
+            group_id: portal.group_id ? String(portal.group_id) : '',
+            name: portal.name ?? '',
+            description: portal.description ?? '',
+            url: portal.url ?? '',
+            image: null,
+            is_active: !!portal.is_active,
+            _method: 'PUT',
+        });
+        clearErrors();
+        setIsModalOpen(true);
+    };
+
+    const submitPortal = (e) => {
+        e.preventDefault();
+
+        if (editingPortal) {
+            post(route('admin.portals.update', editingPortal.id), {
+                forceFormData: true,
+                onSuccess: closeModal,
+            });
+            return;
+        }
+
+        post(route('admin.portals.store'), {
+            forceFormData: true,
+            onSuccess: closeModal,
+        });
+    };
+
     const clearSearch = () => {
         setSearch('');
         setGroupId('');
@@ -51,6 +135,42 @@ export default function Index({ portals, filters, groups }) {
         router.put(route('admin.portals.status', portal.id), {
             is_active: !portal.is_active,
         });
+    };
+
+    const getPreviewElement = () => {
+        if (previewUrl) {
+            return (
+                <img
+                    src={previewUrl}
+                    alt="Selected preview"
+                    className="h-40 w-full object-cover"
+                />
+            );
+        }
+        if (editingPortal?.image_path) {
+            return (
+                <img
+                    src={`/storage/${editingPortal.image_path}`}
+                    alt={editingPortal.name}
+                    className="h-40 w-full object-cover"
+                />
+            );
+        }
+        return (
+            <div className="flex h-40 items-center justify-center text-sm text-gray-400">
+                Image preview will appear here
+            </div>
+        );
+    };
+
+    const getPreviewFileName = () => {
+        if (data.image) {
+            return data.image.name;
+        }
+        if (editingPortal?.image_path) {
+            return 'Current image is being used';
+        }
+        return 'No file selected';
     };
 
     return (
@@ -77,9 +197,7 @@ export default function Index({ portals, filters, groups }) {
                     )}
 
                     <div className="mb-4">
-                        <Link href={route('admin.portals.create')}>
-                            <PrimaryButton>Add New Portal</PrimaryButton>
-                        </Link>
+                        <PrimaryButton onClick={openCreateModal}>Add New Portal</PrimaryButton>
                     </div>
 
                     <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
@@ -156,9 +274,13 @@ export default function Index({ portals, filters, groups }) {
                                             </button>
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                            <Link href={route('admin.portals.edit', portal.id)} className="text-indigo-600 hover:text-indigo-900">
+                                            <button
+                                                type="button"
+                                                onClick={() => openEditModal(portal)}
+                                                className="text-indigo-600 hover:text-indigo-900"
+                                            >
                                                 Edit
-                                            </Link>
+                                            </button>
                                             <button
                                                 onClick={() => handleDelete(portal.id)}
                                                 className="ml-4 text-red-600 hover:text-red-900"
@@ -200,6 +322,133 @@ export default function Index({ portals, filters, groups }) {
                     </div>
                 </div>
             </div>
+
+            <Modal show={isModalOpen} onClose={closeModal} maxWidth="2xl">
+                <div className="flex max-h-[85vh] flex-col">
+                    <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                            {editingPortal ? 'Edit Portal' : 'Create Portal'}
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={closeModal}
+                            className="text-sm text-gray-500 hover:text-gray-700"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <form id="portal-form" onSubmit={submitPortal} className="space-y-6 overflow-y-auto p-6">
+                        <div>
+                            <InputLabel htmlFor="group_id" value="Group" />
+                            <select
+                                id="group_id"
+                                name="group_id"
+                                value={data.group_id}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                onChange={(e) => setData('group_id', e.target.value)}
+                            >
+                                <option value="">Select a group</option>
+                                {groups.map((group) => (
+                                    <option key={group.id} value={group.id}>
+                                        {group.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError message={errors.group_id} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="name" value="Name" />
+                            <TextInput
+                                id="name"
+                                type="text"
+                                name="name"
+                                value={data.name}
+                                className="mt-1 block w-full"
+                                autoComplete="name"
+                                onChange={(e) => setData('name', e.target.value)}
+                            />
+                            <InputError message={errors.name} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="description" value="Description" />
+                            <textarea
+                                id="description"
+                                name="description"
+                                value={data.description}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                onChange={(e) => setData('description', e.target.value)}
+                            />
+                            <InputError message={errors.description} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="url" value="URL" />
+                            <TextInput
+                                id="url"
+                                type="url"
+                                name="url"
+                                value={data.url}
+                                className="mt-1 block w-full"
+                                onChange={(e) => setData('url', e.target.value)}
+                            />
+                            <InputError message={errors.url} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="image" value="Image" />
+                            <div className="relative mt-2 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                                <label
+                                    htmlFor="image"
+                                    className="absolute right-3 top-3 z-10 inline-flex cursor-pointer items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
+                                >
+                                    Choose image
+                                </label>
+                                <input
+                                    id="image"
+                                    type="file"
+                                    name="image"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => setData('image', e.target.files[0] || null)}
+                                />
+                                {getPreviewElement()}
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                                    <p className="truncate text-xs text-white">
+                                        {getPreviewFileName()}
+                                    </p>
+                                </div>
+                            </div>
+                            <InputError message={errors.image} className="mt-2" />
+                        </div>
+
+                        <div className="flex items-center">
+                            <Checkbox
+                                name="is_active"
+                                checked={data.is_active}
+                                onChange={(e) => setData('is_active', e.target.checked)}
+                            />
+                            <InputLabel htmlFor="is_active" value="Active" className="ml-2" />
+                        </div>
+                    </form>
+
+                    <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+                        <SecondaryButton type="button" onClick={closeModal}>
+                            Cancel
+                        </SecondaryButton>
+                        <button
+                            type="submit"
+                            form="portal-form"
+                            disabled={processing}
+                            className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25"
+                        >
+                            {editingPortal ? 'Update' : 'Create'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     );
 }
